@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Copy, Plus, Trash2, Wand2 } from "lucide-react";
+import Stream from "stream";
 
 // -----------------------------
 // Verb Cheat Sheet
@@ -54,6 +55,66 @@ const VERBS = {
   ],
 };
 
+// -----------------------------
+// Emoji mapping for categories/verbs
+// -----------------------------
+const CATEGORY_EMOJI: Record<keyof typeof VERBS, string> = {
+  Technical: "🛠️",
+  Collaboration: "🤝",
+  Leadership: "🧭",
+  Innovation: "💡",
+};
+
+// Specific overrides for some verbs where an icon clarifies intent better than group default
+const VERB_EMOJI_OVERRIDES: Record<string, string> = {
+  Documented: "📝",
+  Prototyped: "🧪",
+  Benchmarked: "📊",
+  Containerized: "🐳",
+  Instrumented: "📈",
+  Mentored: "🧑‍🏫",
+  Unblocked: "🧹",
+  Delivered: "🎁",
+  Optimized: "⚡",
+  Resolved: "✅",
+  Upgraded: "⬆️",
+  Refined: "🔧",
+  Automated: "🤖",
+  Stabilized: "⚖",
+  Implemented: "💻",
+  Hardened: "💎",
+  Guided: "🧭",
+  Supported: "💪",
+  Facilitated: "🎖️",
+  Collaborated: "🤝",
+  Enabled: "🚀",
+  Coordinated: "🤹",
+  Proposed: "🫴🏻",
+  Initiated: "🚦",
+  Streamlined: "🛤️",
+  Standardized: "📏",
+  Championed: "🏆",
+  Owned: "🎯",
+  Prioritized: "🔝",
+  Identified: "🔍",
+  Suggested: "💡",
+  Explored: "🧭",
+  Designed: "🎨",
+};
+
+const emojiForVerb = (verb: string): string => {
+  if (!verb) return "";
+  if (VERB_EMOJI_OVERRIDES[verb]) return VERB_EMOJI_OVERRIDES[verb];
+  // find the category the verb belongs to
+  for (const [cat, verbs] of Object.entries(VERBS) as Array<[
+    keyof typeof VERBS,
+    string[]
+  ]>) {
+    if (verbs.includes(verb)) return CATEGORY_EMOJI[cat];
+  }
+  return "✅"; // sensible default
+};
+
 // Convert a past-tense verb to -ing (simple heuristic)
 const toIng = (verb: string) => {
   // special cases
@@ -93,11 +154,15 @@ const VerbMenu: React.FC<{
   asIng?: boolean;
 }> = ({ value, onSelect, asIng }) => {
   const renderLabel = (v: string) => (asIng ? toIng(v) : v);
+  const renderWithEmoji = (v: string) => {
+    const emoji = emojiForVerb(v);
+    return `${emoji ? emoji + " " : ""}${renderLabel(v)}`;
+  };
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="secondary" size="sm" className="min-w-28 justify-between border border-gray-300 bg-white hover:bg-gray-50">
-          <span className="truncate">{value ? renderLabel(value) : "Choose verb"}</span>
+        <Button variant="secondary" size="sm" className="min-w-36 justify-between border border-gray-300 bg-white hover:bg-gray-50">
+          <span className="truncate">{value ? renderWithEmoji(value) : "Choose verb"}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="max-h-72 overflow-auto bg-white border border-gray-100">
@@ -105,10 +170,13 @@ const VerbMenu: React.FC<{
         <DropdownMenuSeparator />
         {Object.entries(VERBS).map(([group, verbs]) => (
           <div key={group} className="px-1 mb-4 bg-white">
-            <div className="text-[11px] uppercase tracking-wider text-muted-foreground p-2 bg-gray-100">{group}</div>
+            <div className="text-[11px] uppercase tracking-wider text-muted-foreground p-2 bg-gray-100">
+              <span className="mr-1">{CATEGORY_EMOJI[group as keyof typeof VERBS]}</span>
+              {group}
+            </div>
             {verbs.map((v) => (
               <DropdownMenuItem key={v} onClick={() => onSelect(v)} className="cursor-pointer pl-2 hover:bg-blue-50">
-                {renderLabel(v)}
+                {renderWithEmoji(v)}
               </DropdownMenuItem>
             ))}
           </div>
@@ -203,12 +271,13 @@ export default function StandupBuilderApp() {
       items[s].forEach((it) => {
         if (!it.task && !it.verb && !it.impact) return;
         const verb = s === "today" && it.verb ? toIng(it.verb) : it.verb;
+        const emoji = emojiForVerb(it.verb);
         if (s === "blockers") {
           const need = it.task || "Waiting/Need";
           const risk = it.impact || "may affect timeline";
           lines.push(`- ${need} → ${risk}.`);
         } else {
-          const left = [verb, it.task].filter(Boolean).join(" ");
+          const left = [emoji, verb, it.task].filter(Boolean).join(" ");
           const right = it.impact ? ` → ${it.impact}` : "";
           lines.push(`- ${left}${right}.`);
         }
@@ -262,10 +331,16 @@ export default function StandupBuilderApp() {
             <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
               {Object.entries(VERBS).map(([group, verbs]) => (
                 <div key={group} className="flex items-start gap-2 bg-muted/40 px-2 py-1 rounded-xl">
-                  <span className="uppercase tracking-wider text-[10px] pt-1">{group}</span>
+                  <span className="uppercase tracking-wider text-[10px] pt-1">
+                    <span className="mr-1">{CATEGORY_EMOJI[group as keyof typeof VERBS]}</span>
+                    {group}
+                  </span>
                   <div className="flex flex-wrap gap-1">
                     {verbs.map((v) => (
-                      <Badge key={v} variant="outline" className="rounded-full">{v}</Badge>
+                      <Badge key={v} variant="outline" className="rounded-full">
+                        <span className="mr-1">{emojiForVerb(v)}</span>
+                        {v}
+                      </Badge>
                     ))}
                   </div>
                 </div>

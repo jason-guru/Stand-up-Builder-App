@@ -6,7 +6,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Copy, Plus, Trash2, Wand2 } from "lucide-react";
-import Stream from "stream";
 
 // -----------------------------
 // Verb Cheat Sheet

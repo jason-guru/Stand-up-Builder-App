@@ -98,7 +98,7 @@ const VERB_EMOJI_OVERRIDES: Record<string, string> = {
   Prioritized: "🔝",
   Identified: "🔍",
   Suggested: "💡",
-  Explored: "🧭",
+  Explored: "🔭",
   Designed: "🎨",
 };
 
